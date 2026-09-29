@@ -1,11 +1,11 @@
 import hre from "hardhat";
 import { expect } from "chai";
 import { MyToken } from "../typechain-types";
-import { HardhatEthersHelpers } from "hardhat/types";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("mytoken deploy", () => {
   let myTokenC: MyToken;
-  let singers: HardhatEthersSigners[];
+  let singers: HardhatEthersSigner[];
   before("should deploy", async () => {
     singers = await hre.ethers.getSigners();
     myTokenC = await hre.ethers.deployContract("MyToken", [

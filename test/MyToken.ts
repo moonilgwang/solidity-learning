@@ -18,7 +18,7 @@ describe("My Token", () => {
       mintingAmount,
     ]);
   });
-  describe("Baswic state value check", () => {
+  describe("Basic state value check", () => {
     it("should return name", async () => {
       expect(await myTokenC.name()).equal("MyToken");
     });
@@ -49,14 +49,32 @@ describe("My Token", () => {
 
   describe("Transfer", () => {
     it("shoud have 0.5MT", async () => {
+      const signer0 = singers[0];
       const signer1 = singers[1];
-      await myTokenC.transfer(
+      await expect(
+        myTokenC.transfer(
+          hre.ethers.parseUnits("0.5", decimals),
+          signer1.address,
+        ),
+      )
+        .to.emit(myTokenC, "Transfer")
+        .withArgs(
+          signer0.address,
+          signer1.address,
+          hre.ethers.parseUnits("0.5", decimals),
+        );
+      // const receipt = await tx.wait();
+      // console.log(receipt?.logs);
+      expect(await myTokenC.balanceOf(signer1.address)).equal(
         hre.ethers.parseUnits("0.5", decimals),
-        signer1.address,
       );
-      expect(await myTokenC.balanceOf(signer1)).equal(
-        hre.ethers.parseUnits("0.5", decimals),
-      );
+
+      // const filter = myTokenC.filters.Transfer(signer0.address);
+      // const logs = await myTokenC.queryFilter(filter, 0, "latest");
+      // console.log(logs.length);
+      // console.log(logs[0].args.from);
+      // console.log(logs[0].args.to);
+      // console.log(logs[0].args.value);
     });
     it("shoud be reverted with insufficient balance error", async () => {
       const signer1 = singers[1];

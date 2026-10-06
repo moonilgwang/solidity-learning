@@ -37,7 +37,6 @@ describe("My Token", () => {
     });
   });
 
-  // 1MT = 1 * 10 ** 18
   describe("Mint", () => {
     it("should return 1MT balace for signer 0", async () => {
       const signers0 = singers[0];
@@ -87,7 +86,7 @@ describe("My Token", () => {
     });
   });
   describe("TransferFrom", () => {
-    it("should emiot approval event", async () => {
+    it("should emit approval event", async () => {
       const signer1 = singers[1];
       await expect(
         myTokenC.approve(
@@ -110,6 +109,57 @@ describe("My Token", () => {
             hre.ethers.parseUnits("1", decimals),
           ),
       ).to.be.revertedWith("insufficient allowance");
+    });
+  });
+  describe("Assignment for transferFrom & approve", () => {
+    const amount = hre.ethers.parseUnits("10", decimals);
+
+    it("1. approve: Grant signer1 permission to transfer signer0's assets.", async () => {
+      const signer1 = singers[1];
+
+      await expect(myTokenC.approve(signer1.address, amount))
+        .to.emit(myTokenC, "Approval")
+        .withArgs(signer1.address, amount);
+
+      expect(
+        await myTokenC.allowance(singers[0].address, signer1.address),
+      ).equal(amount);
+    });
+
+    it("2. transferFrom: Have signer1 transfer signer0's MT tokens to signer1's own address.", async () => {
+      const signer0 = singers[0];
+      const signer1 = singers[1];
+
+      await myTokenC.approve(signer1.address, amount);
+
+      await expect(
+        myTokenC
+          .connect(signer1)
+          .transferFrom(signer0.address, signer1.address, amount),
+      )
+        .to.emit(myTokenC, "Transfer")
+        .withArgs(signer0.address, signer1.address, amount);
+    });
+
+    it("3. check balances", async () => {
+      const signer0 = singers[0];
+      const signer1 = singers[1];
+
+      const initialSigner0Balance = mintingAmount * 10n ** decimals;
+
+      await myTokenC.approve(signer1.address, amount);
+
+      await myTokenC
+        .connect(signer1)
+        .transferFrom(signer0.address, signer1.address, amount);
+
+      // signer0: 100 MT - 10 MT = 90 MT
+      expect(await myTokenC.balanceOf(signer0.address)).equal(
+        initialSigner0Balance - amount,
+      );
+
+      // signer1: 0 MT + 10 MT = 10 MT
+      expect(await myTokenC.balanceOf(signer1.address)).equal(amount);
     });
   });
 });

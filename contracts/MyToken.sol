@@ -26,6 +26,10 @@ contract MyToken {
         _mint(_amount * 10 ** uint256(decimals), msg.sender);
     }
 
+    function mint(uint256 amount, address owner) external {
+        _mint(amount, owner); //취약점
+    }
+
     function approve(address spender, uint256 amount) external {
         allowance[msg.sender][spender] = amount;
 

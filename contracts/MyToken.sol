@@ -19,8 +19,9 @@ contract MyToken is ManagedAccess {
         string memory _name,
         string memory _symbol,
         uint8 _decimal,
-        uint256 _amount
-    ) ManagedAccess(msg.sender, msg.sender) {
+        uint256 _amount,
+        address[] memory _managers
+    ) ManagedAccess(msg.sender, _managers) {
         name = _name;
         symbol = _symbol;
         decimals = _decimal;
@@ -31,8 +32,12 @@ contract MyToken is ManagedAccess {
         _mint(amount, to);
     }
 
-    function setManager(address _manager) external onlyOwner {
-        manager = _manager;
+    function setManager(address[] memory _managers) external onlyOwner {
+        managers = _managers;
+        //수정한 부분
+        for (uint256 i = 0; i < _managers.length; i++) {
+            isManager[_managers[i]] = true;
+        }
     }
 
     function _mint(uint256 amount, address to) internal {

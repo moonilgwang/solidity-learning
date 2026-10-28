@@ -25,13 +25,17 @@ contract TinyBank is ManagedAccess {
 
     mapping(address => uint256) public lastClaimedBlock;
 
-    uint256 defaultRewardPerBlock = 1 * 10 ** 18;
-    uint256 rewardPerBlock;
+    //테스트를 위해서 잠시 public로 변경
+    uint256 public defaultRewardPerBlock = 1 * 10 ** 18;
+    uint256 public rewardPerBlock;
 
     mapping(address => uint256) public staked;
     uint256 public totalStaked;
 
-    constructor(IMyToken _stakingToken) ManagedAccess(msg.sender, msg.sender) {
+    constructor(
+        IMyToken _stakingToken,
+        address[] memory _managers // 추가한 부분
+    ) ManagedAccess(msg.sender, _managers) {
         stakingToken = _stakingToken;
         rewardPerBlock = defaultRewardPerBlock;
     }
@@ -46,7 +50,7 @@ contract TinyBank is ManagedAccess {
         _; //이 앞에 코드를 insert하는 효과가 있다고함 & caller's code
     }
 
-    function setRewardPerBlock(uint256 _amount) external onlyManager {
+    function setRewardPerBlock(uint256 _amount) external onlyAllConfirmed {
         rewardPerBlock = _amount;
     }
 

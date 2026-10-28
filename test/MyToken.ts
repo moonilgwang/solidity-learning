@@ -9,11 +9,17 @@ describe("My Token", () => {
   let signers: HardhatEthersSigner[];
   beforeEach("should deploy", async () => {
     signers = await hre.ethers.getSigners();
+    const managers = [
+      signers[1].address,
+      signers[2].address,
+      signers[3].address,
+    ];
     myTokenC = await hre.ethers.deployContract("MyToken", [
       "MyToken",
       "MT",
       DECIMALS,
       MINTING_AMOUNT,
+      managers,
     ]);
   });
   describe("Basic state value check", () => {
@@ -45,7 +51,7 @@ describe("My Token", () => {
 
     //TDD: Test Driven Development
     it("should return or revert when minting infinitely", async () => {
-      const hacker = signers[2];
+      const hacker = signers[4];
       const mintingAgainAmount = hre.ethers.parseUnits("100", DECIMALS);
       await expect(
         myTokenC.connect(hacker).mint(mintingAgainAmount, hacker.address),

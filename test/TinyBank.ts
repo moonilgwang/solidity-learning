@@ -11,16 +11,25 @@ describe("TinyBank", () => {
 
   beforeEach(async () => {
     signers = await hre.ethers.getSigners();
+    // ManagedAccess.sol에 맞춰서 일부 수정
+    const managers = [
+      signers[1].address,
+      signers[2].address,
+      signers[3].address,
+    ];
     myTokenC = await hre.ethers.deployContract("MyToken", [
       "MyToken",
       "MT",
       DECIMALS,
       MINTING_AMOUNT,
+      managers,
     ]);
     tinyBankC = await hre.ethers.deployContract("TinyBank", [
       await myTokenC.getAddress(),
+      managers,
     ]);
-    await myTokenC.setManager(tinyBankC.getAddress());
+    const tinyBankAddress = await tinyBankC.getAddress();
+    await myTokenC.setManager([tinyBankAddress]);
   });
 
   describe("Initializaed state check", () => {
@@ -77,11 +86,54 @@ describe("TinyBank", () => {
       );
     });
     it("Should revert when changing rewardPerBlock by hacker", async () => {
-      const hacker = signers[3];
+      const hacker = signers[4];
       const rewardToChange = hre.ethers.parseUnits("10000", DECIMALS);
       await expect(
         tinyBankC.connect(hacker).setRewardPerBlock(rewardToChange),
-      ).to.be.revertedWith("You are not authorized to manage this contract");
+      ).to.be.revertedWith("You are not a manager");
+    });
+  });
+  describe("Assignment #3: Multi Manager", () => {
+    const rewardToChange = hre.ethers.parseUnits("500", DECIMALS);
+
+    it("1. Should revert with 'You are not a manager' when called by a non-manager", async () => {
+      const hacker = signers[4];
+      await expect(
+        tinyBankC.connect(hacker).setRewardPerBlock(rewardToChange),
+      ).to.be.revertedWith("You are not a manager");
+    });
+
+    it("2-1. Should revert with 'Not all confirmed yet' when a manager has confirmed", async () => {
+      const manager1 = signers[1];
+
+      await tinyBankC.connect(manager1).confirm();
+      await expect(
+        tinyBankC.connect(manager1).setRewardPerBlock(rewardToChange),
+      ).to.be.revertedWith("Not all confirmed yet");
+    });
+    it("2-2. Should revert with 'Not all confirmed yet' when two managers have confirmed", async () => {
+      const manager1 = signers[1];
+      const manager2 = signers[2];
+
+      await tinyBankC.connect(manager1).confirm();
+      await tinyBankC.connect(manager2).confirm();
+
+      await expect(
+        tinyBankC.connect(manager2).setRewardPerBlock(rewardToChange),
+      ).to.be.revertedWith("Not all confirmed yet");
+    });
+    it("2-3. Should succeed when all managers have confirmed", async () => {
+      const manager1 = signers[1];
+      const manager2 = signers[2];
+      const manager3 = signers[3];
+
+      await tinyBankC.connect(manager1).confirm();
+      await tinyBankC.connect(manager2).confirm();
+      await tinyBankC.connect(manager3).confirm();
+
+      await tinyBankC.connect(manager3).setRewardPerBlock(rewardToChange);
+
+      expect(await tinyBankC.rewardPerBlock()).to.equal(rewardToChange);
     });
   });
 });

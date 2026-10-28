@@ -58,7 +58,7 @@ describe("TinyBank", () => {
   });
 
   describe("reward", () => {
-    it("should reward 1mMT every block", async () => {
+    it("should reward 1MT every block", async () => {
       const signer0 = signers[0];
       const stakingAmount = hre.ethers.parseUnits("50", DECIMALS);
       await myTokenC.approve(await tinyBankC.getAddress(), stakingAmount);

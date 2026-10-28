@@ -9,6 +9,7 @@
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
+import "./ManagedAccess.sol";
 
 interface IMyToken {
     function transfer(uint256 amount, address to) external;
@@ -16,22 +17,24 @@ interface IMyToken {
     function mint(uint256 amount, address owner) external;
 }
 
-contract TinyBank {
+contract TinyBank is ManagedAccess {
     event Staked(address, uint256);
     event Withdraw(uint256 amount, address to);
 
     IMyToken public stakingToken;
 
     mapping(address => uint256) public lastClaimedBlock;
-    uint256 public rewardPerBlock = 1 * 10 ** 18;
+
+    uint256 defaultRewardPerBlock = 1 * 10 ** 18;
+    uint256 rewardPerBlock;
 
     mapping(address => uint256) public staked;
     uint256 public totalStaked;
 
-    constructor(IMyToken _stakingToken) {
+    constructor(IMyToken _stakingToken) ManagedAccess(msg.sender, msg.sender) {
         stakingToken = _stakingToken;
+        rewardPerBlock = defaultRewardPerBlock;
     }
-    //처음 할 때 Devide by zero error 발생
     modifier updateReward(address to) {
         if (staked[to] > 0) {
             uint256 blocks = block.number - lastClaimedBlock[to];
@@ -41,6 +44,10 @@ contract TinyBank {
         }
         lastClaimedBlock[to] = block.number;
         _; //이 앞에 코드를 insert하는 효과가 있다고함 & caller's code
+    }
+
+    function setRewardPerBlock(uint256 _amount) external onlyManager {
+        rewardPerBlock = _amount;
     }
 
     function stake(uint256 _amount) external updateReward(msg.sender) {
